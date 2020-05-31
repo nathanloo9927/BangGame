@@ -22,18 +22,27 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class Main extends Application {
-    Button carda, cardb, cardc, cardd, carde, cardf, cardg, cardh, end;
+    Button carda, cardb, cardc, cardd, carde, cardf, cardg, cardh, end, takehit;
+    Game banggame;
     Player person;
     Scene gameplay;
     Stage myStage;
     HashMap<String, Scene> sceneMap;
+    Card bangcard;
+    Card missedcard;
+    Label turnnum, health, role, needdiscard;
+    Label remainingcards; // testing purposes, comment out when done
 
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("Bang");
         myStage = primaryStage;
         sceneMap = new HashMap<String, Scene>();
 
+        bangcard = new Card("Bang", 0);
+        missedcard = new Card("Missed", 1);
+
         person = new Player(0);
+        banggame = new Game(4);
         carda = new Button();
         cardb = new Button();
         cardc = new Button();
@@ -42,74 +51,99 @@ public class Main extends Application {
         cardf = new Button();
         cardg = new Button();
         cardh = new Button();
-        end = new Button();
+        end = new Button("End turn");
+        takehit = new Button("Take damage");
 
-        person.beginturn();
+        takehit.setDisable(true);
+
+        health = new Label();
+        role = new Label();
+        turnnum = new Label();
+        needdiscard = new Label();
+        remainingcards = new Label(); // remove when done testing
+
+        banggame.start();
         setnewpositions();
 
         carda.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(0);
+                banggame.play(0);
                 setnewpositions();
             }
         });
 
         cardb.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(1);
+                banggame.play(1);
                 setnewpositions();
             }
         });
 
         cardc.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(2);
+                banggame.play(2);
                 setnewpositions();
             }
         });
 
         cardd.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(3);
+                banggame.play(3);
                 setnewpositions();
             }
         });
 
         carde.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(4);
+                banggame.play(4);
                 setnewpositions();
             }
         });
 
         cardf.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(5);
+                banggame.play(5);
                 setnewpositions();
             }
         });
 
         cardg.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(6);
+                banggame.play(6);
                 setnewpositions();
             }
         });
 
         cardh.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent actionEvent) {
-                person.playCard(7);
+                banggame.play(7);
                 setnewpositions();
             }
         });
 
-        HBox playerhand = new HBox(10, carda, cardb, cardc, cardd, carde, cardf, cardg, cardh);
+        end.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent actionEvent) {
+                banggame.attemptend();
+                setnewpositions();
+            }
+        });
+
+        takehit.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent actionEvent) {
+                banggame.takehit();
+            }
+        });
+
+        VBox addons = new VBox(10, end, takehit);
+        VBox stats = new VBox(10, turnnum, health, role, remainingcards);
+        HBox playerhand = new HBox(10, carda, cardb, cardc, cardd, carde, cardf, cardg, cardh, addons, stats);
+        VBox tryend = new VBox(10, playerhand, needdiscard);
 
         BorderPane pane = new BorderPane();
         pane.setPadding(new Insets(70));
-        pane.setBottom(playerhand);
+        pane.setBottom(tryend);
 
-        gameplay = new Scene(pane, 700, 400);
+        gameplay = new Scene(pane, 800, 400);
 
         sceneMap.put("gaming", gameplay);
 
@@ -118,7 +152,18 @@ public class Main extends Application {
     }
 
     public void setnewpositions() {
-        ArrayList<Card> hand = person.getHand();
+        ArrayList<Card> hand = banggame.getHand();
+        turnnum.setText("Player " + banggame.getTurn() + "'s turn");
+        health.setText("Health: " + banggame.healthstat());
+        role.setText("Role: " + banggame.rolestat());
+        if (banggame.indiscard()) {
+            needdiscard.setText("You need to discard some cards");
+        } else {
+            needdiscard.setText("");
+        }
+
+        // display the deck size, don't show in actual game, so delete once done testing
+        remainingcards.setText("Remaining: " + banggame.left());
         int size = hand.size();
 
         carda.setDisable(true);
@@ -140,44 +185,131 @@ public class Main extends Application {
         cardh.setText("");
 
         if (size >= 1) {
-            carda.setText(hand.get(0).getName());
-            carda.setDisable(false);
+            Card ca = hand.get(0);
+            carda.setText(ca.getName());
+            if (banggame.indiscard()) {
+                carda.setDisable(false);
+            } else {
+                if (ca.equals(missedcard)) {
+                    carda.setDisable(true);
+                } else if (ca.equals(bangcard) && banggame.playedbang()) {
+                    carda.setDisable(true);
+                } else {
+                    carda.setDisable(false);
+                }
+            }
         }
 
         if (size >= 2) {
-            cardb.setText(hand.get(1).getName());
-            cardb.setDisable(false);
-
+            Card cb = hand.get(1);
+            cardb.setText(cb.getName());
+            if (banggame.indiscard()) {
+                cardb.setDisable(false);
+            } else {
+                if (cb.equals(missedcard)) {
+                    cardb.setDisable(true);
+                } else if (cb.equals(bangcard) && banggame.playedbang()) {
+                    cardb.setDisable(true);
+                } else {
+                    cardb.setDisable(false);
+                }
+            }
         }
 
         if (size >= 3) {
-            cardc.setText(hand.get(2).getName());
-            cardc.setDisable(false);
+            Card cc = hand.get(2);
+            cardc.setText(cc.getName());
+            if (banggame.indiscard()) {
+                cardc.setDisable(false);
+            } else {
+                if (cc.equals(missedcard)) {
+                    cardc.setDisable(true);
+                } else if (cc.equals(bangcard) && banggame.playedbang()) {
+                    cardc.setDisable(true);
+                } else {
+                    cardc.setDisable(false);
+                }
+            }
         }
 
         if (size >= 4) {
-            cardd.setText(hand.get(3).getName());
-            cardd.setDisable(false);
+            Card cd = hand.get(3);
+            cardd.setText(cd.getName());
+            if (banggame.indiscard()) {
+                cardd.setDisable(false);
+            } else {
+                if (cd.equals(missedcard)) {
+                    cardd.setDisable(true);
+                } else if (cd.equals(bangcard) && banggame.playedbang()) {
+                    cardd.setDisable(true);
+                } else {
+                    cardd.setDisable(false);
+                }
+            }
         }
 
         if (size >= 5) {
-            carde.setText(hand.get(4).getName());
-            carde.setDisable(false);
+            Card ce = hand.get(4);
+            carde.setText(ce.getName());
+            if (banggame.indiscard()) {
+                carde.setDisable(false);
+            } else {
+                if (ce.equals(missedcard)) {
+                    carde.setDisable(true);
+                } else if (ce.equals(bangcard) && banggame.playedbang()) {
+                    carde.setDisable(true);
+                } else {
+                    carde.setDisable(false);
+                }
+            }
         }
 
         if (size >= 6) {
-            cardf.setText(hand.get(5).getName());
-            cardf.setDisable(false);
+            Card cf = hand.get(5);
+            cardf.setText(cf.getName());
+            if (banggame.indiscard()) {
+                cardf.setDisable(false);
+            } else {
+                if (cf.equals(missedcard)) {
+                    cardf.setDisable(true);
+                } else if (cf.equals(bangcard) && banggame.playedbang()) {
+                    cardf.setDisable(true);
+                } else {
+                    cardf.setDisable(false);
+                }
+            }
         }
 
         if (size >= 7) {
-            cardg.setText(hand.get(6).getName());
-            cardg.setDisable(false);
+            Card cg = hand.get(6);
+            cardg.setText(cg.getName());
+            if (banggame.indiscard()) {
+                cardg.setDisable(false);
+            } else {
+                if (cg.equals(missedcard)) {
+                    cardg.setDisable(true);
+                } else if (cg.equals(bangcard) && banggame.playedbang()) {
+                    cardg.setDisable(true);
+                } else {
+                    cardg.setDisable(false);
+                }
+            }
         }
 
         if (size >= 8) {
-            cardh.setText(hand.get(7).getName());
-            cardh.setDisable(false);
+            Card ch = hand.get(7);
+            cardh.setText(ch.getName());
+            if (banggame.indiscard()) {
+                cardh.setDisable(false);
+            } else {
+                if (!ch.equals(missedcard)) {
+                    cardh.setDisable(true);
+                } else if (ch.equals(bangcard) && banggame.playedbang()) {
+                    cardh.setDisable(true);
+                } else {
+                    cardh.setDisable(false);
+                }
+            }
         }
     }
 

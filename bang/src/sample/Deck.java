@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class Deck {
-    public static Deck deck = new Deck();
     private ArrayList<Card> cards;
 
-    private Deck() {
+    public Deck() {
         cards = new ArrayList<Card>();
 
         // add bangs - x25
@@ -24,7 +23,7 @@ public class Deck {
 
         // add beers - x6
         for (int i = 0; i < 6; i++) {
-            Card card = new Card("beer", 2);
+            Card card = new Card("Beer", 2);
             cards.add(card);
         }
     }
@@ -33,5 +32,13 @@ public class Deck {
         Random rand = new Random();
         int pos = rand.nextInt(cards.size());
         return cards.remove(pos);
+    }
+
+    public void shufflediscard(ArrayList<Card> newcards) {
+        cards.addAll(newcards);
+    }
+
+    public int remaining() {
+        return cards.size();
     }
 }

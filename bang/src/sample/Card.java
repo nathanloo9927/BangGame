@@ -21,4 +21,11 @@ public class Card {
     public int getid() {
         return id;
     }
+
+    public boolean equals(Card other) {
+        if (other.getName().equals(effect) && other.getid() == id) {
+            return true;
+        }
+        return false;
+    }
 }

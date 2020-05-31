@@ -6,11 +6,10 @@ public class Player {
     private int playernumber;
     private int range;
     private int health;
+    private int maxhealth;
     private ArrayList<Card> hand;
-    private boolean yourturn;
     private boolean banged;
     private boolean targeted;
-    private boolean discardphase;
     private String role;
     private Player left;
     private Player right;
@@ -20,14 +19,9 @@ public class Player {
         range = 1;
         hand = new ArrayList<Card>();
         health = 4;
-        // deal 4 cards to start
-        for (int i = 0; i < 4; i++) {
-            hand.add(Deck.deck.draw());
-        }
-        yourturn = false;
+        maxhealth = 4;
         banged = false;
         targeted = false;
-        discardphase = false;
         role = "";
         left = null;
         right = null;
@@ -45,24 +39,12 @@ public class Player {
     // if the player was banged and didn't play a missed
     public void takedamage() {
         health--;
+        targeted = false;
     }
 
     // the player played a beer
     public void heal() {
         health++;
-    }
-
-    // returns if it's the player's turn or not
-    public boolean shouldgo() {
-        return yourturn;
-    }
-
-    // begins your turn, draw 2 cards and you should be able to bang
-    public void beginturn() {
-        yourturn = true;
-        hand.add(Deck.deck.draw());
-        hand.add(Deck.deck.draw());
-        banged = false;
     }
 
     // returns if the player is a target of a bang or not
@@ -75,36 +57,14 @@ public class Player {
         targeted = true;
     }
 
-    // the player chose what to do
-    public void react() {
-        targeted = false;
-    }
-
     // did the player play a bang
     public boolean didbang() {
         return banged;
     }
 
     // the player played a bang
-    public void usedbang() {
-        banged = true;
-    }
-
-    // is the player in the discard phase
-    public boolean disphase() {
-        return discardphase;
-    }
-
-    // the player has to discard if health is lower than hand size
-    public boolean canendturn() {
-        if (health < hand.size() && yourturn) {
-            discardphase = true;
-            return false;
-        } else {
-            discardphase = false;
-            yourturn = false;
-            return true;
-        }
+    public void modifybanged(boolean bang) {
+        banged = bang;
     }
 
     // get player's hand
@@ -112,9 +72,39 @@ public class Player {
         return hand;
     }
 
+    // draw cards
+    public void draw(Card card) {
+        hand.add(card);
+    }
+
     // play a card
-    public void playCard(int pos) {
-        hand.remove(pos);
+    public Card playCard(int pos) {
+        Card played = hand.get(pos);
+        Card bang = new Card("Bang", 0);
+        Card missed = new Card("Missed", 1);
+        Card beer = new Card("Beer", 2);
+        Card nullcard = new Card("Error", -1);
+        if (played.equals(bang)) {
+            if (!banged) {
+                banged = true;
+                return hand.remove(pos);
+            }
+        } else if (played.equals(missed)) {
+            if (targeted) {
+                targeted = false;
+                return hand.remove(pos);
+            }
+        } else if (played.equals(beer)) {
+            if (health < maxhealth) {
+                health++;
+                return hand.remove(pos);
+            }
+        }
+        return nullcard;
+    }
+
+    public Card discardcard(int pos) {
+        return hand.remove(pos);
     }
 
     // set the player's role
